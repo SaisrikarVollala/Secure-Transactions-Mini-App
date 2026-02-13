@@ -24,7 +24,7 @@ export default function TxPage() {
       setResult(JSON.stringify(data, null, 2));
 
       if (data.id) setRecordId(data.id);
-    } catch (err) {
+    } catch (error) {
       setResult("Invalid JSON payload or request failed");
     }
   }
