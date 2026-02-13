@@ -7,7 +7,7 @@ export type paymentPayload = {
 }
 
 export default async function paymentRoute(app: FastifyInstance) {
-  app.get<{ Body: paymentPayload }>("/encrypt", {
+  app.post<{ Body: paymentPayload }>("/encrypt", {
     schema: {
       body: {
         type: "object",

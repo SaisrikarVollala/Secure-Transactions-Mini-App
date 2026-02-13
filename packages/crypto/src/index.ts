@@ -1,5 +1,5 @@
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
-
+import "dotenv/config";
 const ALGORITHM = "aes-256-gcm";
 const NONCE_LENGTH = 12; 
 const TAG_LENGTH = 16; 
@@ -7,7 +7,7 @@ const KEY_LENGTH = 32;
 
 
 
-const masterHex=process.env.MASTER_KEY_HEX || "";
+const masterHex=process.env.MASTER_KEY_HEX||"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ;
 const MASTER_KEY = Buffer.from(
   masterHex,
   "hex"
@@ -33,13 +33,14 @@ export interface EncryptionResult {
   tag: string; 
 }
 
-function encryptAES256GCM(
+export function encryptAES256GCM(
   plaintext: Buffer,
   key: Buffer
 ): EncryptionResult {
   if (key.length !== KEY_LENGTH) {
     throw new Error(`Key must be ${KEY_LENGTH} bytes`);
   }
+
 
   const nonce = randomBytes(NONCE_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, nonce);
@@ -52,7 +53,6 @@ function encryptAES256GCM(
   if (tag.length !== TAG_LENGTH) {
     throw new Error(`Tag must be ${TAG_LENGTH} bytes`);
   }
-
   return {
     encryptedData: encrypted.toString("hex"),
     nonce: nonce.toString("hex"),
@@ -61,7 +61,7 @@ function encryptAES256GCM(
 }
 
 
-function decryptAES256GCM(
+export function decryptAES256GCM(
   encryptedData: string,
   nonce: string,
   tag: string,
@@ -69,6 +69,7 @@ function decryptAES256GCM(
 ): Buffer {
   
   if (key.length !== KEY_LENGTH) {
+    console.log(key)
     throw new Error(`Key must be ${KEY_LENGTH} bytes`);
   }
 
@@ -94,7 +95,7 @@ function decryptAES256GCM(
 }
 
 
-function isValidHex(str: string): boolean {
+export function isValidHex(str: string): boolean {
   return /^[0-9a-fA-F]+$/.test(str) && str.length % 2 === 0;
 }
 
@@ -102,15 +103,16 @@ function isValidHex(str: string): boolean {
 export function envelopeEncrypt(payload: object): Omit<TxSecureRecord, "id" | "partyId" | "createdAt"> {
   
   const dek = randomBytes(KEY_LENGTH);
-
+  console.log(dek)
   
   const payloadJson = JSON.stringify(payload);
   const payloadBuffer = Buffer.from(payloadJson, "utf-8");
+
   const payloadEncryption = encryptAES256GCM(payloadBuffer, dek);
 
   
   const dekWrapping = encryptAES256GCM(dek, MASTER_KEY);
-
+  console.log("wrappedup")
   return {
     payload_nonce: payloadEncryption.nonce,
     payload_ct: payloadEncryption.encryptedData,

@@ -7,12 +7,13 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
-    
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/formbody": "^8.0.2",
+    "@repo/crypto": "workspace:*",
     "fastify": "^5.7.4"
   },
   "devDependencies": {
