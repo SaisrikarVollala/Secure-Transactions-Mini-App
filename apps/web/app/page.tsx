@@ -1,102 +1,109 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
+"use client";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
+import { useState } from "react";
 
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
+
+export default function TxPage() {
+  const [partyId, setPartyId] = useState("");
+  const [payload, setPayload] = useState(`{\n  "amount": 100,\n  "currency": "AED"\n}`);
+  const [result, setResult] = useState("");
+  const [recordId, setRecordId] = useState("");
+
+  async function encryptAndSave() {
+    try {
+      const res = await fetch("/tx/encrypt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partyId,
+          payload: JSON.parse(payload),
+        }),
+      });
+
+      const data = await res.json();
+      setResult(JSON.stringify(data, null, 2));
+
+      if (data.id) setRecordId(data.id);
+    } catch (err) {
+      setResult("Invalid JSON payload or request failed");
+    }
+  }
+
+  async function fetchRecord() {
+    if (!recordId) return setResult("No record id available");
+
+    const res = await fetch(`/tx/${recordId}`);
+    const data = await res.json();
+    setResult(JSON.stringify(data, null, 2));
+  }
+
+  async function decryptRecord() {
+    if (!recordId) return setResult("No record id available");
+
+    const res = await fetch(`/tx/${recordId}/decrypt`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    setResult(JSON.stringify(data, null, 2));
+  }
 
   return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+      <div
+        className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8 space-y-6"
+      >
+        <h1 className="text-2xl font-semibold">Transaction Encryption</h1>
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.dev/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Party ID</label>
+          <input
+            value={partyId}
+            onChange={(e) => setPartyId(e.target.value)}
+            placeholder="party_123"
+            className="w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">JSON Payload</label>
+          <textarea
+            rows={6}
+            value={payload}
+            onChange={(e) => setPayload(e.target.value)}
+            className="w-full border rounded-xl px-4 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.dev?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.dev →
-        </a>
-      </footer>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={encryptAndSave}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+          >
+            Encrypt & Save
+          </button>
+
+          <button
+            onClick={fetchRecord}
+            className="bg-gray-700 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
+          >
+            Fetch
+          </button>
+
+          <button
+            onClick={decryptRecord}
+            className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+          >
+            Decrypt
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Result</label>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-xl text-sm overflow-auto">
+            {result}
+          </pre>
+        </div>
+      </div>
     </div>
   );
 }
